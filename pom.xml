@@ -9,7 +9,7 @@
     </parent>
     <artifactId>concord-plugin-support</artifactId>
     <groupId>ca.vanzyl.concord.plugins</groupId>
-    <version>0.0.4</version>
+    <version>0.0.5-SNAPSHOT</version>
     <packaging>takari-jar</packaging>
 
     <properties>
@@ -44,8 +44,4 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
-  <scm>
-    <tag>concord-plugin-support-0.0.4</tag>
-  </scm>
 </project>
