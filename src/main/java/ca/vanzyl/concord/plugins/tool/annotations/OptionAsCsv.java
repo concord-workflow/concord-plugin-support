@@ -7,13 +7,13 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
-public @interface Option {
-
+public @interface OptionAsCsv
+{
     String[] name();
 
-    Class<?> omitFor() default void.class;
-
     String description() default "";
+
+    boolean required() default false;
 
     String[] allowedValues() default {};
 }
