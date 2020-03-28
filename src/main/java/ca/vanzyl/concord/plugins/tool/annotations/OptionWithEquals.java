@@ -9,17 +9,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 public @interface OptionWithEquals {
 
-    String title() default "";
-
     String[] name();
 
     String description() default "";
 
     boolean required() default false;
-
-    int arity() default -2147483648;
-
-    boolean hidden() default false;
 
     String[] allowedValues() default {};
 }

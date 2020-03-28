@@ -9,19 +9,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 public @interface Option {
 
-    String title() default "";
-
     String[] name();
 
-    Class omitFor() default void.class;
+    Class<?> omitFor() default void.class;
 
     String description() default "";
-
-    boolean required() default false;
-
-    int arity() default -2147483648;
-
-    boolean hidden() default false;
-
+    
     String[] allowedValues() default {};
 }
