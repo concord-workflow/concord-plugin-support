@@ -36,6 +36,11 @@ public abstract class ToolTaskSupport
     protected final Configurator toolConfigurator;
     protected final Map<String, ToolCommand> commands;
 
+    public ToolTaskSupport(Map<String, ToolCommand> commands, ToolInitializer toolInitializer)
+    {
+        this(commands, null, toolInitializer);
+    }
+
     public ToolTaskSupport(Map<String, ToolCommand> commands, LockService lockService, ToolInitializer toolInitializer)
     {
         this.commands = commands;
