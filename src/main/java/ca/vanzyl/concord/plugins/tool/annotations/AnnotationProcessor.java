@@ -8,9 +8,6 @@ import java.util.List;
 
 public class AnnotationProcessor
 {
-    // TODO: clean up repeated code and come up with a model for generating this
-    // TODO: separate this code into its own class
-    // TODO: ignore private static final fields
     public static List<String> cliArgumentsFromAnnotations(String commandName, Object command) throws Exception {
         //
         // eksctl create cluster --config-file cluster.yaml --kubeconfig /home/concord/.kube/config
@@ -19,6 +16,7 @@ public class AnnotationProcessor
         //
         List<String> arguments = Lists.newArrayList();
 
+        // Running inside Guice vs not. We get the generated proxy when running in Guice and have to reach up to the superclass
         Value v = command.getClass().getSuperclass().getAnnotation(Value.class);
         if (v == null) {
             v = command.getClass().getAnnotation(Value.class);
@@ -37,81 +35,88 @@ public class AnnotationProcessor
             Object operand = field.get(command);
             if (operand != null) {
                 if (operand.getClass().isPrimitive() || Boolean.class.isAssignableFrom(operand.getClass()) || String.class.isAssignableFrom(operand.getClass())) {
-                    Option option = field.getAnnotation(Option.class);
-                    if (option != null) {
-                        Object value = field.get(command);
-                        if (value != null) {
-                            arguments.add(option.name()[0]);
-                            arguments.add((String) value);
-                        }
-                    } else if (field.getAnnotation(Value.class) != null) {
-                        System.out.println("field.getName() = " + field.getName());
-                        Object value = field.get(command);
-                        System.out.println("value = " + value);
-                        arguments.add((String) value);
+                    if(field.getAnnotations().length == 2) {
+                        processAnnotation(field.getAnnotation(Option.class), command, command, field, arguments);
+                        processAnnotation(field.getAnnotation(Flag.class), command, field, arguments);
+                        processAnnotation(field.getAnnotation(OptionWithEquals.class), command, field, arguments);
                     } else {
-                        Flag flag = field.getAnnotation(Flag.class);
-                        if (flag != null) {
-                            arguments.add(flag.name()[0]);
-                        }
-                        OptionWithEquals optionWithEquals = field.getAnnotation(OptionWithEquals.class);
-                        if (optionWithEquals != null) {
-                            Object value = field.get(command);
-                            if (value != null) {
-                                arguments.add(optionWithEquals.name()[0] + "=" + value);
-                            }
-                        }
+                        processField(command, field, arguments);
                     }
                 } else {
-                    // helm install <omit chart> --name xxx --values yyy
-                    Omit omit = field.getAnnotation(Omit.class);
-                    if (omit == null) {
-                        arguments.add(field.getName());
-                    }
+                    processAnnotation(field.getAnnotation(Omit.class), operand, field, arguments);
                     for (Field configuration : operand.getClass().getDeclaredFields()) {
-                        Option option = configuration.getAnnotation(Option.class);
-                        if (option != null) {
-                            configuration.setAccessible(true);
-                            Object value = configuration.get(operand);
-                            if (value != null) {
-                                if (!option.omitFor().equals(command.getClass())) {
-                                    arguments.add(option.name()[0]);
-                                }
-                                arguments.add((String) value);
-                            }
-                        } else if (configuration.getAnnotation(KeyValue.class) != null) {
-                            KeyValue annotion = configuration.getAnnotation(KeyValue.class);
-                            configuration.setAccessible(true);
-                            Object fieldValue = configuration.get(operand);
-                            if (fieldValue != null) {
-                                // --set
-                                String parameter = annotion.name();
-                                List<String> kvs = (List<String>) fieldValue;
-                                for (String e : kvs) {
-                                    // --set "ingress.hostname=bob.fetesting.com"
-                                    arguments.add(parameter);
-                                    arguments.add(e);
-                                }
-                            }
+                        if(configuration.getAnnotations().length == 2) {
+                            processAnnotation(configuration.getAnnotation(Option.class), operand, command, configuration, arguments);
+                            processAnnotation(configuration.getAnnotation(KeyValue.class), operand, configuration, arguments);
+                            processAnnotation(configuration.getAnnotation(Flag.class), operand, configuration, arguments);
                         } else {
-                            Flag flag = configuration.getAnnotation(Flag.class);
-                            if (flag != null) {
-                                configuration.setAccessible(true);
-                                boolean value = (boolean) configuration.get(operand);
-                                if (value) {
-                                    arguments.add(flag.name()[0]);
-                                }
-                            } else {
-                                System.out.println("configuration = " + configuration);
-                                configuration.setAccessible(true);
-                                Object value = configuration.get(operand);
-                                arguments.add((String) value);
-                            }
+                            processField(operand, configuration, arguments);
                         }
                     }
                 }
             }
         }
         return arguments;
+    }
+
+    static void processAnnotation(Option option, Object operand, Object command, Field field, List<String> arguments) throws Exception {
+        if (option != null) {
+            field.setAccessible(true);
+            Object value = field.get(operand);
+            if (value != null) {
+                // This is specifically for Helm install vs upgrade where install uses the --name parameter and its omitted in upgrade
+                if (!option.omitFor().equals(command.getClass())) {
+                    arguments.add(option.name()[0]);
+                }
+                arguments.add((String) value);
+            }
+        }
+    }
+
+    static void processAnnotation(Flag flag, Object operand, Field field, List<String> arguments) throws Exception {
+        if (flag != null) {
+            arguments.add(flag.name()[0]);
+        }
+    }
+
+    static void processAnnotation(OptionWithEquals optionWithEquals, Object operand, Field field, List<String> arguments) throws Exception {
+        if (optionWithEquals != null) {
+            Object value = field.get(operand);
+            if (value != null) {
+                arguments.add(optionWithEquals.name()[0] + "=" + value);
+            }
+        }
+    }
+
+    static void processAnnotation(KeyValue keyValue, Object operand, Field field, List<String> arguments) throws Exception {
+        if(keyValue != null) {
+            field.setAccessible(true);
+            Object fieldValue = field.get(operand);
+            if (fieldValue != null) {
+                // --set
+                String parameter = keyValue.name();
+                List<String> kvs = (List<String>) fieldValue;
+                for (String e : kvs) {
+                    // --set "ingress.hostname=bob.fetesting.com"
+                    arguments.add(parameter);
+                    arguments.add(e);
+                }
+            }
+        }
+    }
+
+    static void processAnnotation(Omit omit, Object operand, Field field, List<String> arguments) throws Exception {
+        // helm install <omit chart> --name xxx --values yyy
+        if (omit == null) {
+            arguments.add(field.getName());
+        }
+    }
+
+    static void processField(Object operand, Field field, List<String> arguments) throws Exception {
+        field.setAccessible(true);
+        Object value = field.get(operand);
+        if(value != null) {
+            arguments.add((String) value);
+        }
     }
 }
