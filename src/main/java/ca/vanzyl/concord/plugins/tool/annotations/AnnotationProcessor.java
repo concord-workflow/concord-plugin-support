@@ -79,6 +79,8 @@ public class AnnotationProcessor
         }
     }
 
+    // kubectl: kubectl --validate=false
+    // packer: packer build -parallel-builds=1
     static void processAnnotation(OptionWithEquals optionWithEquals, Object operand, Field field, List<String> arguments) throws Exception {
         if (optionWithEquals != null) {
             Object value = field.get(operand);
@@ -88,6 +90,7 @@ public class AnnotationProcessor
         }
     }
 
+    // helm --set "foo=bar"
     static void processAnnotation(KeyValue keyValue, Object operand, Field field, List<String> arguments) throws Exception {
         if(keyValue != null) {
             field.setAccessible(true);
@@ -105,8 +108,8 @@ public class AnnotationProcessor
         }
     }
 
+    // helm install <omit chart> --name xxx --values yyy
     static void processAnnotation(Omit omit, Object operand, Field field, List<String> arguments) throws Exception {
-        // helm install <omit chart> --name xxx --values yyy
         if (omit == null) {
             arguments.add(field.getName());
         }
