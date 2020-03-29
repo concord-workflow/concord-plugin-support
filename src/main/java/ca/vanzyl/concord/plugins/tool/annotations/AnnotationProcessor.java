@@ -7,14 +7,29 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
+/*
+
+helm <-- commandName
+  commands
+    - init
+    - repo
+    - install <chart>
+    - upgrade <chart>
+
+*/
 public class AnnotationProcessor
 {
-    public static List<String> cliArgumentsFromAnnotations(String commandName, Object command) throws Exception {
-        //
-        // eksctl create cluster --config-file cluster.yaml --kubeconfig /home/concord/.kube/config
-        //
-        // kubectl apply -f 00-helm/tiller-rbac.yml
-        //
+    /**
+     * Construct a CLI based on command name, and a command instance that has been configured. The command instance
+     * is configured from the parameters passed to Concord.
+     *
+     * @param commandName The command name like 'packer' or 'helm'
+     * @param command The javax.inject annotated command instance that has been configured
+     * @return
+     * @throws Exception
+     */
+    public List<String> process(String commandName, Object command) throws Exception {
+
         List<String> arguments = Lists.newArrayList();
 
         // Running inside Guice vs not. We get the generated proxy when running in Guice and have to reach up to the superclass
@@ -36,26 +51,11 @@ public class AnnotationProcessor
             Object operand = field.get(command);
             if (operand != null) {
                 if (primitive(operand)) {
-                    if(field.getAnnotations().length == 2) {
-                        processAnnotation(field.getAnnotation(Option.class), command, command, field, arguments);
-                        processAnnotation(field.getAnnotation(OptionAsCsv.class), command, command, field, arguments);
-                        processAnnotation(field.getAnnotation(OptionWithEquals.class), command, field, arguments);
-                        processAnnotation(field.getAnnotation(Flag.class), command, field, arguments);
-                    } else {
-                        processField(command, field, arguments);
-                    }
+                    processAnnotations(field, command, command, arguments);
                 } else {
-                    processAnnotation(field.getAnnotation(Omit.class), operand, field, arguments);
+                    processAnnotation(field.getAnnotation(Omit.class), operand, command, field, arguments);
                     for (Field configuration : operand.getClass().getDeclaredFields()) {
-                        if(configuration.getAnnotations().length == 2) {
-                            processAnnotation(configuration.getAnnotation(Option.class), operand, command, configuration, arguments);
-                            processAnnotation(configuration.getAnnotation(OptionAsCsv.class), command, command, field, arguments);
-                            processAnnotation(configuration.getAnnotation(OptionWithEquals.class), command, field, arguments);
-                            processAnnotation(configuration.getAnnotation(KeyValue.class), operand, configuration, arguments);
-                            processAnnotation(configuration.getAnnotation(Flag.class), operand, configuration, arguments);
-                        } else {
-                            processField(operand, configuration, arguments);
-                        }
+                        processAnnotations(configuration, operand, command, arguments);
                     }
                 }
             }
@@ -63,7 +63,8 @@ public class AnnotationProcessor
         return arguments;
     }
 
-    static boolean primitive(Object operand) {
+    // Are we operating on primitives of collections of primitives
+    boolean primitive(Object operand) {
         TypeToken<List<String>> stringList = new TypeToken<List<String>>() {};
         return operand.getClass().isPrimitive() ||
                 Boolean.class.isAssignableFrom(operand.getClass())
@@ -71,7 +72,20 @@ public class AnnotationProcessor
                 || stringList.getRawType().isAssignableFrom(operand.getClass());
     }
 
-    static void processAnnotation(Option option, Object operand, Object command, Field field, List<String> arguments) throws Exception {
+    private void processAnnotations(Field field, Object operand, Object command, List<String> arguments) throws Exception
+    {
+        if(field.getAnnotations().length == 2) {
+            processAnnotation(field.getAnnotation(Option.class), operand, command, field, arguments);
+            processAnnotation(field.getAnnotation(OptionAsCsv.class), operand, command, field, arguments);
+            processAnnotation(field.getAnnotation(OptionWithEquals.class), operand, command, field, arguments);
+            processAnnotation(field.getAnnotation(KeyValue.class), operand, command, field, arguments);
+            processAnnotation(field.getAnnotation(Flag.class), operand, command, field, arguments);
+        } else {
+            processField(operand, field, arguments);
+        }
+    }
+
+    private void processAnnotation(Option option, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (option != null) {
             field.setAccessible(true);
             Object value = field.get(operand);
@@ -85,7 +99,7 @@ public class AnnotationProcessor
         }
     }
 
-    static void processAnnotation(OptionAsCsv option, Object operand, Object command, Field field, List<String> arguments) throws Exception {
+    private void processAnnotation(OptionAsCsv option, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (option != null) {
             field.setAccessible(true);
             Object value = field.get(operand);
@@ -97,7 +111,7 @@ public class AnnotationProcessor
 
     // kubectl: kubectl --validate=false
     // packer: packer build -parallel-builds=1
-    static void processAnnotation(OptionWithEquals optionWithEquals, Object operand, Field field, List<String> arguments) throws Exception {
+    private void processAnnotation(OptionWithEquals optionWithEquals, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (optionWithEquals != null) {
             Object value = field.get(operand);
             if (value != null) {
@@ -106,14 +120,14 @@ public class AnnotationProcessor
         }
     }
 
-    static void processAnnotation(Flag flag, Object operand, Field field, List<String> arguments) throws Exception {
+    private void processAnnotation(Flag flag, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (flag != null) {
             arguments.add(flag.name()[0]);
         }
     }
 
     // helm --set "foo=bar"
-    static void processAnnotation(KeyValue keyValue, Object operand, Field field, List<String> arguments) throws Exception {
+    private void processAnnotation(KeyValue keyValue, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if(keyValue != null) {
             field.setAccessible(true);
             Object fieldValue = field.get(operand);
@@ -131,13 +145,13 @@ public class AnnotationProcessor
     }
 
     // helm install <omit chart> --name xxx --values yyy
-    static void processAnnotation(Omit omit, Object operand, Field field, List<String> arguments) throws Exception {
+    private void processAnnotation(Omit omit, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (omit == null) {
             arguments.add(field.getName());
         }
     }
 
-    static void processField(Object operand, Field field, List<String> arguments) throws Exception {
+    private void processField(Object operand, Field field, List<String> arguments) throws Exception {
         field.setAccessible(true);
         Object value = field.get(operand);
         if(value != null) {

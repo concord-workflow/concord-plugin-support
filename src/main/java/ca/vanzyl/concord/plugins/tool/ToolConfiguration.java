@@ -22,6 +22,9 @@ public class ToolConfiguration {
     @JsonProperty
     private boolean dryRun;
 
+    @JsonProperty
+    private boolean saveOutput;
+
     @JsonProperty("envars")
     protected Map<String,String> envars;
 
@@ -45,18 +48,24 @@ public class ToolConfiguration {
         return dryRun;
     }
 
+    public boolean saveOutput() {
+        return saveOutput;
+    }
+
     public Map<String,String> envars() {
         return envars != null ? envars : ImmutableMap.of();
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return "ToolConfiguration{" +
                 "command='" + command + '\'' +
                 ", version='" + version + '\'' +
                 ", url='" + url + '\'' +
                 ", debug=" + debug +
                 ", dryRun=" + dryRun +
+                ", collectLogs=" + saveOutput +
                 ", envars=" + envars +
                 '}';
     }

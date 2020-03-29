@@ -1,15 +1,14 @@
 package ca.vanzyl.concord.plugins.tool;
 
 import ca.vanzyl.concord.plugins.Configurator;
+import ca.vanzyl.concord.plugins.tool.annotations.AnnotationProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.walmartlabs.concord.sdk.Context;
 import com.walmartlabs.concord.sdk.LockService;
 import com.walmartlabs.concord.sdk.Task;
-import io.airlift.units.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +20,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import static ca.vanzyl.concord.plugins.tool.annotations.AnnotationProcessor.cliArgumentsFromAnnotations;
 
 public abstract class ToolTaskSupport
         implements Task
@@ -35,6 +31,7 @@ public abstract class ToolTaskSupport
     protected final ToolInitializer toolInitializer;
     protected final Configurator toolConfigurator;
     protected final Map<String, ToolCommand> commands;
+    protected final AnnotationProcessor annotationProcessor;
 
     public ToolTaskSupport(Map<String, ToolCommand> commands, ToolInitializer toolInitializer)
     {
@@ -47,6 +44,7 @@ public abstract class ToolTaskSupport
         this.lockService = lockService;
         this.toolInitializer = toolInitializer;
         this.toolConfigurator = new Configurator();
+        this.annotationProcessor = new AnnotationProcessor();
     }
 
     public void execute(Context context)
@@ -101,14 +99,8 @@ public abstract class ToolTaskSupport
         // Build up the arguments for the execution of this tool: executable +
         List<String> args = Lists.newArrayList();
         args.add(toolInitializationResult.executable().toFile().getAbsolutePath());
-        args.addAll(cliArgumentsFromAnnotations(toolCommandName, toolCommand));
-        CliCommand command = new CliCommand(
-                args,
-                ImmutableSet.of(0),
-                workDir,
-                toolConfiguration.envars(),
-                Duration.succinctDuration(20, TimeUnit.MINUTES)
-        );
+        args.addAll(annotationProcessor.process(toolCommandName, toolCommand));
+        CliCommand command = new CliCommand(args, workDir, toolConfiguration.envars(), toolConfiguration.saveOutput());
 
         // Here is where we want to alter what Helm install is doing. If there is an externals configuration we want
         // fetch the Helm chart, insert the externals into the Helm chart and then install from the directory we
@@ -146,13 +138,7 @@ public abstract class ToolTaskSupport
                 //
                 // "{{executable}} get cluster --name {{name}} --region {{region}} -o json"
                 //
-                CliCommand idempotencyCheck = new CliCommand(
-                        Lists.newArrayList(idempotencyCheckCommand.split(" ")),
-                        ImmutableSet.of(0),
-                        workDir,
-                        toolConfiguration.envars(),
-                        Duration.succinctDuration(20, TimeUnit.MINUTES));
-
+                CliCommand idempotencyCheck = new CliCommand(idempotencyCheckCommand, workDir, toolConfiguration.envars(), toolConfiguration.saveOutput());
                 CliCommand.Result result = idempotencyCheck.execute(Executors.newCachedThreadPool());
 
                 if (result.getCode() == toolCommand.expectedIdempotencyCheckReturnValue()) {
@@ -175,6 +161,12 @@ public abstract class ToolTaskSupport
             if (commandResult.getCode() != 0) {
                 throw new RuntimeException(String.format("The command %s failed. Look in the logs above.", commandLineArguments));
             }
+
+            // Used for testing to collect the log output to make assertions against
+            if (toolConfiguration.saveOutput()) {
+               context.setVariable("logs", commandResult.getStdout());
+            }
+
             //
             // Command post-processing
             //

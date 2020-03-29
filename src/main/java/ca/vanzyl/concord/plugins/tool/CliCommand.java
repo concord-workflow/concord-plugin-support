@@ -1,56 +1,47 @@
 package ca.vanzyl.concord.plugins.tool;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import io.airlift.units.Duration;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public class CliCommand
 {
     private Path workDir;
     private List<String> args;
     private Map<String, String> envars;
-    private final Duration timeout;
+    private final boolean saveOutput;
 
-    public CliCommand(String args)
+    public CliCommand(String args, Path workDir)
             throws Exception
     {
-        // This could be a little more robust
-        this(Arrays.asList(args.split(" ")), ImmutableSet.of(0), Paths.get(new File("").getAbsolutePath()),
-                ImmutableMap.of(),
-                Duration.succinctDuration(30, TimeUnit.SECONDS));
+        this(Arrays.asList(args.split(" ")), workDir, ImmutableMap.of(), false);
     }
 
-    public CliCommand(String args, Set<Integer> successfulExitCodes, Path workDir, Map<String, String> envars, Duration timeout)
+    public CliCommand(String args, Path workDir, Map<String,String> envars, boolean saveOutput)
             throws Exception
     {
-        this(Arrays.asList(args.split(" ")), successfulExitCodes, workDir, envars, timeout);
+        this(Arrays.asList(args.split(" ")), workDir, envars, saveOutput);
     }
 
-    public CliCommand(List<String> args, Set<Integer> successfulExitCodes, Path workDir, Map<String, String> envars, Duration timeout)
+    public CliCommand(List<String> args, Path workDir, Map<String, String> envars, boolean saveOutput)
             throws Exception
     {
         this.workDir = workDir;
         this.args = args;
         this.envars = envars;
-        this.timeout = timeout;
+        this.saveOutput = saveOutput;
     }
 
     public Result execute()
@@ -67,8 +58,8 @@ public class CliCommand
         pb.environment().putAll(combinedEnv);
         Process p = pb.start();
 
-        Future<String> stderr = executor.submit(new StreamReader(p.getErrorStream()));
-        Future<String> stdout = executor.submit(new StreamReader(p.getInputStream()));
+        Future<String> stderr = executor.submit(new StreamReader(saveOutput, p.getErrorStream()));
+        Future<String> stdout = executor.submit(new StreamReader(saveOutput, p.getInputStream()));
 
         int code = p.waitFor();
         return new Result(code, stdout.get(), stderr.get());
@@ -79,13 +70,20 @@ public class CliCommand
         return args;
     }
 
+    protected static void log(String line)
+    {
+        System.out.println(line);
+    }
+
     private static class StreamReader
             implements Callable<String>
     {
+        private final boolean saveOutput;
         private final InputStream in;
 
-        private StreamReader(InputStream in)
+        private StreamReader(boolean saveOutput, InputStream in)
         {
+            this.saveOutput = saveOutput;
             this.in = in;
         }
 
@@ -97,7 +95,10 @@ public class CliCommand
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    sb.append(line).append(System.lineSeparator());
+                    if (saveOutput) {
+                        sb.append(line).append(System.lineSeparator());
+                    }
+                    log(line);
                 }
             }
             return sb.toString();
