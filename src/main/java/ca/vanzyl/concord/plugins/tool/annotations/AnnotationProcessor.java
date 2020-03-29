@@ -30,18 +30,7 @@ public class AnnotationProcessor
      */
     public List<String> process(String commandName, Object command) throws Exception {
 
-        List<String> arguments = Lists.newArrayList();
-
-        // Running inside Guice vs not. We get the generated proxy when running in Guice and have to reach up to the superclass
-        Value v = command.getClass().getSuperclass().getAnnotation(Value.class);
-        if (v == null) {
-            v = command.getClass().getAnnotation(Value.class);
-        }
-        if (v != null) {
-            arguments.add(v.value());
-        } else {
-            arguments.add(commandName);
-        }
+        List<String> arguments = Lists.newArrayList(commandName);
 
         for (Field field : command.getClass().getDeclaredFields()) {
             field.setAccessible(true);
