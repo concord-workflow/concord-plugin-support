@@ -1,6 +1,7 @@
 package ca.vanzyl.concord.plugins.tool;
 
 import com.walmartlabs.concord.plugins.ConcordTestSupport;
+import com.walmartlabs.concord.plugins.OKHttpDownloadManager;
 import org.junit.Test;
 
 import java.nio.file.Files;
