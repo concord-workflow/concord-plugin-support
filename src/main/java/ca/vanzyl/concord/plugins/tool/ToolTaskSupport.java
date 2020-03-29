@@ -97,10 +97,9 @@ public abstract class ToolTaskSupport
         logger.info("We have successfully initialized {} version {}.", toolDescriptor.name(), toolDescriptor.version() != null ? toolDescriptor.version() : toolDescriptor.defaultVersion());
 
         // Build up the arguments for the execution of this tool: executable +
-        List<String> args = Lists.newArrayList();
-        args.add(toolInitializationResult.executable().toFile().getAbsolutePath());
-        args.addAll(annotationProcessor.process(toolCommandName, toolCommand));
-        CliCommand command = new CliCommand(args, workDir, toolConfiguration.envars(), toolConfiguration.saveOutput());
+        List<String> cliArguments = Lists.newArrayList();
+        cliArguments.add(toolInitializationResult.executable().toFile().getAbsolutePath());
+        cliArguments.addAll(annotationProcessor.process(toolCommandName, toolCommand));
 
         // Here is where we want to alter what Helm install is doing. If there is an externals configuration we want
         // fetch the Helm chart, insert the externals into the Helm chart and then install from the directory we
@@ -114,19 +113,21 @@ public abstract class ToolTaskSupport
         // Place envar into the context
         context.setVariable("envars", toolConfiguration.envars());
 
-        String commandLineArguments = String.join(" ", command.getCommand());
+        //String commandLineArguments = String.join(" ", cliArguments);
         if (toolConfiguration.dryRun()) {
-            context.setVariable("commandLineArguments", String.join(" ", command.getCommand()));
-            context.setVariable("dryRun", "true");
-            //
+
             // Command pre-processing
-            //
             toolCommand.preProcess(workDir, context);
-            logger.info(commandLineArguments);
-            //
+            toolCommand.preExecute(context, workDir, cliArguments);
+
             // Command post-processing
-            //
             toolCommand.postProcess(workDir, context);
+            toolCommand.postExecute(context, workDir);
+
+            String commandLineArguments = String.join(" ", cliArguments);
+            logger.info(commandLineArguments);
+
+            addContextVariables(context, toolInitializationResult, commandLineArguments);
         }
         else {
             if (toolCommand.idempotencyCheckCommand(context) != null) {
@@ -135,28 +136,25 @@ public abstract class ToolTaskSupport
                 idempotencyCheckCommand = mustache(idempotencyCheckCommand, "executable", toolInitializationResult.executable().toFile().getAbsolutePath());
                 logger.info("idempotencyCheckCommand: " + idempotencyCheckCommand);
 
-                //
                 // "{{executable}} get cluster --name {{name}} --region {{region}} -o json"
-                //
                 CliCommand idempotencyCheck = new CliCommand(idempotencyCheckCommand, workDir, toolConfiguration.envars(), toolConfiguration.saveOutput());
                 CliCommand.Result result = idempotencyCheck.execute(Executors.newCachedThreadPool());
 
                 if (result.getCode() == toolCommand.expectedIdempotencyCheckReturnValue()) {
 
-                    logger.info("This command has already run successfully: " + command.getCommand());
-                    //
+                    logger.info("This command has already run successfully: " + cliArguments);
                     // The task we are intending to run has already executed successfully. It is the job of the idempotency
                     // command to ask if what we intend to do has already been done.
-                    //
                     return;
                 }
             }
 
-            //
             // Command pre-processing
-            //
             toolCommand.preProcess(workDir, context);
+            toolCommand.preExecute(context, workDir, cliArguments);
+            String commandLineArguments = String.join(" ", cliArguments);
             logger.info("Executing: " + commandLineArguments);
+            CliCommand command = new CliCommand(cliArguments, workDir, toolConfiguration.envars(), toolConfiguration.saveOutput());
             CliCommand.Result commandResult = command.execute(Executors.newCachedThreadPool());
             if (commandResult.getCode() != 0) {
                 throw new RuntimeException(String.format("The command %s failed. Look in the logs above.", commandLineArguments));
@@ -164,14 +162,13 @@ public abstract class ToolTaskSupport
 
             // Used for testing to collect the log output to make assertions against
             if (toolConfiguration.saveOutput()) {
-                context.setVariable("commandLineArguments", String.join(" ", command.getCommand()));
+                addContextVariables(context, toolInitializationResult, commandLineArguments);
                 context.setVariable("logs", commandResult.getStdout());
             }
 
-            //
             // Command post-processing
-            //
             toolCommand.postProcess(workDir, context);
+            toolCommand.postExecute(context, workDir);
         }
     }
 
@@ -229,5 +226,12 @@ public abstract class ToolTaskSupport
             throw new IllegalArgumentException("Can't determine the current '" + com.walmartlabs.concord.sdk.Constants.Context.WORK_DIR_KEY + "'");
         }
         return workDir;
+    }
+
+    protected void addContextVariables(Context context, ToolInitializationResult toolInitializationResult, String commandLineArguments) {
+        context.setVariable("executable", toolInitializationResult.executable());
+        context.setVariable("commandLineArguments", commandLineArguments);
+        context.setVariable("normalizedCommandLineArguments", commandLineArguments.substring(toolInitializationResult.executable().toString().lastIndexOf('/')+1));
+        context.setVariable("dryRun", "true");
     }
 }

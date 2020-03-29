@@ -6,6 +6,7 @@ import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Map;
 
 /*
 
@@ -19,6 +20,9 @@ helm <-- commandName
 */
 public class AnnotationProcessor
 {
+    private static TypeToken<List<String>> listVariable = new TypeToken<List<String>>() {};
+    private static TypeToken<Map<String,Object>> mapVariable = new TypeToken<Map<String,Object>>() {};
+
     /**
      * Construct a CLI based on command name, and a command instance that has been configured. The command instance
      * is configured from the parameters passed to Concord.
@@ -54,11 +58,11 @@ public class AnnotationProcessor
 
     // Are we operating on primitives of collections of primitives
     boolean primitive(Object operand) {
-        TypeToken<List<String>> stringList = new TypeToken<List<String>>() {};
         return operand.getClass().isPrimitive() ||
                 Boolean.class.isAssignableFrom(operand.getClass())
                 || String.class.isAssignableFrom(operand.getClass())
-                || stringList.getRawType().isAssignableFrom(operand.getClass());
+                || listVariable.getRawType().isAssignableFrom(operand.getClass())
+                || mapVariable.getRawType().isAssignableFrom(operand.getClass());
     }
 
     private void processAnnotations(Field field, Object operand, Object command, List<String> arguments) throws Exception
@@ -69,8 +73,7 @@ public class AnnotationProcessor
             processAnnotation(field.getAnnotation(OptionWithEquals.class), operand, command, field, arguments);
             processAnnotation(field.getAnnotation(KeyValue.class), operand, command, field, arguments);
             processAnnotation(field.getAnnotation(Flag.class), operand, command, field, arguments);
-        } else {
-            processField(operand, command, field, arguments);
+            processAnnotation(field.getAnnotation(Value.class), operand, command, field, arguments);
         }
     }
 
@@ -116,6 +119,7 @@ public class AnnotationProcessor
     }
 
     // helm --set "foo=bar"
+    // TODO: This should probably operate on a map
     private void processAnnotation(KeyValue keyValue, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if(keyValue != null) {
             field.setAccessible(true);
@@ -144,11 +148,13 @@ public class AnnotationProcessor
         }
     }
 
-    private void processField(Object operand, Object command, Field field, List<String> arguments) throws Exception {
-        field.setAccessible(true);
-        Object value = field.get(operand);
+    private void processAnnotation(Value value, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if(value != null) {
-            arguments.add((String) value);
+            field.setAccessible(true);
+            Object fieldValue = field.get(operand);
+            if (fieldValue != null) {
+                arguments.add((String) fieldValue);
+            }
         }
     }
 }

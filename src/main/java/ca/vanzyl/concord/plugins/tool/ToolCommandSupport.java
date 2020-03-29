@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
 
 public abstract class ToolCommandSupport implements ToolCommand {
@@ -32,6 +33,16 @@ public abstract class ToolCommandSupport implements ToolCommand {
 
     @Override
     public void postProcess(Path workDir, Context context) throws Exception {
+    }
+
+    @Override
+    public void preExecute(Context context, Path workDir, List<String> cliArguments) throws Exception
+    {
+    }
+
+    @Override
+    public void postExecute(Context context, Path workDir) throws Exception
+    {
     }
 
     protected Path workDir(Context context) {

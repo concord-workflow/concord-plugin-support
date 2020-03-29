@@ -65,7 +65,7 @@ public class CliCommand
         return new Result(code, stdout.get(), stderr.get());
     }
 
-    public List<String> getCommand()
+    public List<String> getArgumentList()
     {
         return args;
     }
