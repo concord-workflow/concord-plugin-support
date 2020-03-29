@@ -81,7 +81,7 @@ public class AnnotationProcessor
             processAnnotation(field.getAnnotation(KeyValue.class), operand, command, field, arguments);
             processAnnotation(field.getAnnotation(Flag.class), operand, command, field, arguments);
         } else {
-            processField(operand, field, arguments);
+            processField(operand, command, field, arguments);
         }
     }
 
@@ -144,14 +144,18 @@ public class AnnotationProcessor
         }
     }
 
+    // In the case of Helm the install/upgrade commands imply operating on a chart but 'chart' doesn't show up in the CLI
+    // invocation at all:
+    //
     // helm install <omit chart> --name xxx --values yyy
+    //
     private void processAnnotation(Omit omit, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (omit == null) {
             arguments.add(field.getName());
         }
     }
 
-    private void processField(Object operand, Field field, List<String> arguments) throws Exception {
+    private void processField(Object operand, Object command, Field field, List<String> arguments) throws Exception {
         field.setAccessible(true);
         Object value = field.get(operand);
         if(value != null) {
