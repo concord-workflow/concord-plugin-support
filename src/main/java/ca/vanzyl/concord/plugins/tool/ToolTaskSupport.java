@@ -164,7 +164,8 @@ public abstract class ToolTaskSupport
 
             // Used for testing to collect the log output to make assertions against
             if (toolConfiguration.saveOutput()) {
-               context.setVariable("logs", commandResult.getStdout());
+                context.setVariable("commandLineArguments", String.join(" ", command.getCommand()));
+                context.setVariable("logs", commandResult.getStdout());
             }
 
             //
