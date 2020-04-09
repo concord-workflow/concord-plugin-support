@@ -114,7 +114,9 @@ public class AnnotationProcessor
 
     private void processAnnotation(Flag flag, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (flag != null) {
-            arguments.add(flag.name()[0]);
+            if (!flag.omitFor().equals(command.getClass())) {
+                arguments.add(flag.name()[0]);
+            }
         }
     }
 

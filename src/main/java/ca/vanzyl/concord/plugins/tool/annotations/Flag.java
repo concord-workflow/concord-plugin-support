@@ -14,4 +14,6 @@ public @interface Flag {
     String[] name();
 
     String description() default "";
+
+    Class<?> omitFor() default void.class;
 }
