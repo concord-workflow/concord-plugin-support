@@ -62,6 +62,10 @@ public class CliCommand
         Future<String> stdout = executor.submit(new StreamReader(saveOutput, p.getInputStream()));
 
         int code = p.waitFor();
+
+        // Shutdown the executor
+        executor.shutdown();
+
         return new Result(code, stdout.get(), stderr.get());
     }
 
