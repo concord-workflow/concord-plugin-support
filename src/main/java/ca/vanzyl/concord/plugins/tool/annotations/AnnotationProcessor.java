@@ -105,6 +105,7 @@ public class AnnotationProcessor
     // packer: packer build -parallel-builds=1
     private void processAnnotation(OptionWithEquals optionWithEquals, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (optionWithEquals != null) {
+            field.setAccessible(true);
             Object value = field.get(operand);
             if (value != null) {
                 arguments.add(optionWithEquals.name()[0] + "=" + value);
