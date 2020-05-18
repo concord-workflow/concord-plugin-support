@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,21 +71,8 @@ public class ToolInitializer {
     //
 
     public static String os(ToolDescriptor toolDescriptor) {
-
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.indexOf("mac") >= 0) {
-            os = "darwin";
-        } else if (os.indexOf("nux") >= 0) {
-            os = "linux";
-        } else if (os.indexOf("win") >= 0) {
-            os = "windows";
-        } else if (os.indexOf("sunos") >= 0) {
-            os = "solaris";
-        } else {
-            throw new IllegalArgumentException("Your operating system is not supported: " + os);
-        }
-
-        // The os name is capitalized as in darwin needs to become Darwin for the URL as is the case with EKSCTL
+        String osName = OS.CURRENT.getOsName();
+        // The osName name is capitalized as in darwin needs to become Darwin for the URL as is the case with EKSCTL
         // where the URL is something like:
         //
         // https://github.com/weaveworks/eksctl/releases/download/0.7.0/eksctl_Darwin_amd64.tar.gz
@@ -93,10 +81,9 @@ public class ToolInitializer {
         // comes from.
         //
         if (toolDescriptor.namingStyle().equals(NamingStyle.CAPITALIZE)) {
-            return os.substring(0, 1).toUpperCase() + os.substring(1);
+            return osName.substring(0, 1).toUpperCase() + osName.substring(1);
         }
-
-        return os;
+        return osName;
     }
 
     public ToolInitializationResult initialize(Path workDir, ToolDescriptor toolDescriptor) throws Exception {
