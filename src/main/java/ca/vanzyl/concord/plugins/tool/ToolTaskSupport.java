@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 
 public abstract class ToolTaskSupport
@@ -176,9 +177,16 @@ public abstract class ToolTaskSupport
             throws Exception
     {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        try (InputStream inputStream = ToolTaskSupport.class.getClassLoader().getResourceAsStream(taskName + "/" + "descriptor.yml")) {
+        try (InputStream inputStream = getResourceDescriptor(taskName)) {
             return mapper.readValue(inputStream, ToolDescriptor.class);
         }
+    }
+
+    private static InputStream getResourceDescriptor(String taskName)
+    {
+        ClassLoader classLoader = ToolTaskSupport.class.getClassLoader();
+        return Optional.ofNullable(classLoader.getResourceAsStream(taskName + "/" + OS.CURRENT.getOsName() + ".descriptor.yml"))
+                .orElse(classLoader.getResourceAsStream(taskName + "/" + "descriptor.yml"));
     }
 
     private String mustache(String s, String var, String replacement)
