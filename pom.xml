@@ -24,7 +24,7 @@
             <dependency>
                 <groupId>com.walmartlabs.concord</groupId>
                 <artifactId>concord-targetplatform</artifactId>
-                <version>1.49.0</version>
+                <version>1.62.1-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
