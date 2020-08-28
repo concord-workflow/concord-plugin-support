@@ -9,16 +9,19 @@ import java.nio.file.Path;
 
 import static org.junit.Assert.assertTrue;
 
-public class ToolInitializerTest extends ConcordTestSupport
+public class ToolInitializerTest
+        extends ConcordTestSupport
 {
 
     @Test
-    public void validateToolInitializerWithHelm() throws Exception {
+    public void validateToolInitializerWithHelm()
+            throws Exception
+    {
 
         Path workingDirectory = Files.createTempDirectory("concord");
         deleteDirectory(workingDirectory);
 
-        ToolInitializer toolInitializer = new ToolInitializer(new OKHttpDownloadManager("helm"));
+        ToolInitializer toolInitializer = new ToolInitializer(uri -> new OKHttpDownloadManager("helm").resolve(uri));
         ToolDescriptor toolDescriptor = ToolTaskSupport.fromResource("helm");
         ToolInitializationResult result = toolInitializer.initialize(workingDirectory, toolDescriptor);
 
@@ -29,12 +32,14 @@ public class ToolInitializerTest extends ConcordTestSupport
     }
 
     @Test
-    public void validateToolInitializerWithKubeCtl() throws Exception {
+    public void validateToolInitializerWithKubeCtl()
+            throws Exception
+    {
 
         Path workingDirectory = Files.createTempDirectory("concord");
         deleteDirectory(workingDirectory);
 
-        ToolInitializer toolInitializer = new ToolInitializer(new OKHttpDownloadManager("kubectl"));
+        ToolInitializer toolInitializer = new ToolInitializer(uri -> new OKHttpDownloadManager("kubectl").resolve(uri));
         ToolDescriptor toolDescriptor = ToolTaskSupport.fromResource("kubectl");
         ToolInitializationResult result = toolInitializer.initialize(workingDirectory, toolDescriptor);
 

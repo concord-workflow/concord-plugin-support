@@ -2,7 +2,6 @@ package ca.vanzyl.concord.plugins.tool;
 
 import ca.vanzyl.concord.plugins.tool.ToolDescriptor.NamingStyle;
 import ca.vanzyl.concord.plugins.tool.ToolDescriptor.Packaging;
-import com.walmartlabs.concord.sdk.DependencyManager;
 import io.tesla.proviso.archive.UnArchiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,15 +41,17 @@ import static ca.vanzyl.concord.plugins.tool.ToolDescriptor.Packaging.TARGZ_STRI
 //
 @Named
 @Singleton
-public class ToolInitializer {
+public class ToolInitializer
+{
 
     private static final Logger logger = LoggerFactory.getLogger(ToolInitializer.class);
 
-    private final DependencyManager dependencyManager;
+    private final PackageResolver packageResolver;
 
     @Inject
-    public ToolInitializer(DependencyManager dependencyManager) {
-        this.dependencyManager = dependencyManager;
+    public ToolInitializer(PackageResolver packageResolver)
+    {
+        this.packageResolver = packageResolver;
     }
 
     //private static final String DEFAULT_TERRAFORM_VERSION = "0.12.5";
@@ -70,7 +71,8 @@ public class ToolInitializer {
     // and internal repository manager or other internally managed host.
     //
 
-    public static String os(ToolDescriptor toolDescriptor) {
+    public static String os(ToolDescriptor toolDescriptor)
+    {
         String osName = OS.CURRENT.getOsName();
         // The osName name is capitalized as in darwin needs to become Darwin for the URL as is the case with EKSCTL
         // where the URL is something like:
@@ -86,16 +88,21 @@ public class ToolInitializer {
         return osName;
     }
 
-    public ToolInitializationResult initialize(Path workDir, ToolDescriptor toolDescriptor) throws Exception {
+    public ToolInitializationResult initialize(Path workDir, ToolDescriptor toolDescriptor)
+            throws Exception
+    {
         return initialize(workDir, toolDescriptor, false);
     }
 
-    public ToolInitializationResult initialize(Path workDir, ToolDescriptor toolDescriptor, boolean debug) throws Exception {
+    public ToolInitializationResult initialize(Path workDir, ToolDescriptor toolDescriptor, boolean debug)
+            throws Exception
+    {
 
         Path targetDirectory;
         if (toolDescriptor.location() != null) {
             targetDirectory = Paths.get(toolDescriptor.location());
-        } else {
+        }
+        else {
             targetDirectory = workDir.resolve("." + toolDescriptor.id()); // .eksctl, .terraform, .helm, etc
         }
 
@@ -113,7 +120,7 @@ public class ToolInitializer {
 
         String toolUrl = resolveToolUrl(toolDescriptor);
         logger.info("Retrieving {} package from {} ...", toolDescriptor.name(), toolUrl);
-        Path executablePackage = dependencyManager.resolve(new URI(toolUrl));
+        Path executablePackage = packageResolver.resolve(new URI(toolUrl));
         logger.info("Retrieved {} package and saved to {} ...", toolDescriptor.name(), executablePackage);
 
         if (debug) {
@@ -131,7 +138,8 @@ public class ToolInitializer {
                     .useRoot(useRoot)
                     .build();
             unArchiver.unarchive(executablePackage.toFile(), targetDirectory.toFile());
-        } else {
+        }
+        else {
             // Copy the single file over and make executable
             Files.copy(executablePackage, executable, StandardCopyOption.REPLACE_EXISTING);
             executable.toFile().setExecutable(true);
@@ -153,7 +161,8 @@ public class ToolInitializer {
     // We will also allow the user to specify the full URL if they want to download the tool zip from
     // and internal repository manager or other internally managed host.
     //
-    private String resolveToolUrl(ToolDescriptor toolDescriptor) {
+    private String resolveToolUrl(ToolDescriptor toolDescriptor)
+    {
         String toolUrl = toolDescriptor.userSpecifiedUrl();
         if (toolUrl != null && !toolUrl.isEmpty()) {
             //
