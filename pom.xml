@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>takari</artifactId>
         <groupId>io.takari</groupId>
         <version>27</version>
+        <relativePath/>
     </parent>
+
     <artifactId>concord-plugin-support</artifactId>
     <groupId>ca.vanzyl.concord.plugins</groupId>
     <version>0.0.11-SNAPSHOT</version>
@@ -57,6 +60,7 @@
             <artifactId>concord-common</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -76,12 +80,14 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-guava</artifactId>
-            <version>2.9.9</version>
+            <scope>provided</scope>
         </dependency>
+
         <!-- Immutables -->
         <dependency>
             <groupId>org.immutables</groupId>
@@ -97,11 +103,13 @@
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
         </dependency>
+
         <!-- Secrets client -->
         <dependency>
             <groupId>com.squareup.okhttp</groupId>
             <artifactId>okhttp</artifactId>
         </dependency>
+
         <!-- ToolInitializer -->
         <dependency>
             <groupId>io.takari</groupId>
@@ -123,6 +131,7 @@
             <artifactId>compiler</artifactId>
             <version>0.9.6</version>
         </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>ca.vanzyl.concord.plugins</groupId>
