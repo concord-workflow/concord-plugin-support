@@ -7,10 +7,10 @@ public enum OS
     WINDOWS(".exe"),
     SOLARIS("");
 
-    static OS CURRENT = resolveOs();
+    public static OS CURRENT = resolveOs();
 
-    private String osName;
-    private String executableSuffix;
+    private final String osName;
+    private final String executableSuffix;
 
     OS(String executableSuffix)
     {
@@ -18,7 +18,8 @@ public enum OS
         this.executableSuffix = executableSuffix;
     }
 
-    public String appendExecutableSuffix(String executableName){
+    public String appendExecutableSuffix(String executableName)
+    {
         return String.join("", executableName, executableSuffix);
     }
 
@@ -30,16 +31,16 @@ public enum OS
     private static OS resolveOs()
     {
         String os = System.getProperty("os.name").toLowerCase();
-        if (os.indexOf("mac") >= 0) {
+        if (os.contains("mac")) {
             return DARWIN;
         }
-        else if (os.indexOf("nux") >= 0) {
+        else if (os.contains("nux")) {
             return LINUX;
         }
-        else if (os.indexOf("win") >= 0) {
+        else if (os.contains("win")) {
             return WINDOWS;
         }
-        else if (os.indexOf("sunos") >= 0) {
+        else if (os.contains("sunos")) {
             return SOLARIS;
         }
         else {
