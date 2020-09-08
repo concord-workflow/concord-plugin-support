@@ -97,10 +97,12 @@ public class ToolInitializer
     public ToolInitializationResult initialize(Path workDir, ToolDescriptor toolDescriptor, boolean debug)
             throws Exception
     {
-
         Path targetDirectory;
-        if (toolDescriptor.location() != null) {
-            targetDirectory = Paths.get(toolDescriptor.location());
+
+        String location = toolDescriptor.location();
+        if (location != null) {
+            location = location.replace("${user.home}", System.getProperty("user.home"));
+            targetDirectory = Paths.get(location);
         }
         else {
             targetDirectory = workDir.resolve("." + toolDescriptor.id()); // .eksctl, .terraform, .helm, etc
