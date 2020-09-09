@@ -11,7 +11,7 @@
 
     <artifactId>concord-plugin-support</artifactId>
     <groupId>ca.vanzyl.concord.plugins</groupId>
-    <version>0.0.12-SNAPSHOT</version>
+    <version>0.0.12</version>
     <packaging>takari-jar</packaging>
 
     <properties>
@@ -149,4 +149,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+  <scm>
+    <tag>concord-plugin-support-0.0.12</tag>
+  </scm>
 </project>
