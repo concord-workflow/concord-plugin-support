@@ -1,7 +1,7 @@
-package ca.vanzyl.concord.plugins.tool;
+package ca.vanzyl.concord.plugins.toolsupport;
 
-import ca.vanzyl.concord.plugins.tool.ToolDescriptor.NamingStyle;
-import ca.vanzyl.concord.plugins.tool.ToolDescriptor.Packaging;
+import ca.vanzyl.concord.plugins.toolsupport.ToolDescriptor.NamingStyle;
+import ca.vanzyl.concord.plugins.toolsupport.ToolDescriptor.Packaging;
 import io.tesla.proviso.archive.UnArchiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +16,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import static ca.vanzyl.concord.plugins.tool.ToolDescriptor.Packaging.TARGZ;
-import static ca.vanzyl.concord.plugins.tool.ToolDescriptor.Packaging.TARGZ_STRIP;
+import static ca.vanzyl.concord.plugins.toolsupport.ToolDescriptor.Packaging.TARGZ;
+import static ca.vanzyl.concord.plugins.toolsupport.ToolDescriptor.Packaging.TARGZ_STRIP;
 
 //
 // This has everything to do with initializing a tool for use in

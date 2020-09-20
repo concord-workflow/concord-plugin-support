@@ -1,4 +1,4 @@
-package ca.vanzyl.concord.plugins.tool;
+package ca.vanzyl.concord.plugins.toolsupport;
 
 import org.immutables.value.Value;
 

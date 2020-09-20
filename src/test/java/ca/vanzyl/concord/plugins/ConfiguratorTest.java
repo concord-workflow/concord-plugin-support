@@ -1,5 +1,6 @@
 package ca.vanzyl.concord.plugins;
 
+import ca.vanzyl.concord.plugins.toolsupport.Configurator;
 import com.walmartlabs.concord.plugins.ConcordTestSupport;
 import org.junit.Test;
 

@@ -5,7 +5,7 @@ import com.walmartlabs.concord.runtime.v2.sdk.Context;
 import java.nio.file.Path;
 import java.util.List;
 
-public interface ToolCommandV2
+public interface ToolCommand
 {
     String idempotencyCheckCommand(Context ctx);
 

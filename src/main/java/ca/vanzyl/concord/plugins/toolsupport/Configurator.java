@@ -1,4 +1,4 @@
-package ca.vanzyl.concord.plugins;
+package ca.vanzyl.concord.plugins.toolsupport;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;

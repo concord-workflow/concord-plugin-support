@@ -1,15 +1,6 @@
 package ca.vanzyl.concord.plugins.toolsupport;
 
-import ca.vanzyl.concord.plugins.Configurator;
-import ca.vanzyl.concord.plugins.tool.CliCommand;
-import ca.vanzyl.concord.plugins.tool.ImmutableToolDescriptor;
-import ca.vanzyl.concord.plugins.tool.OS;
-import ca.vanzyl.concord.plugins.tool.PackageResolver;
-import ca.vanzyl.concord.plugins.tool.ToolConfiguration;
-import ca.vanzyl.concord.plugins.tool.ToolDescriptor;
-import ca.vanzyl.concord.plugins.tool.ToolInitializationResult;
-import ca.vanzyl.concord.plugins.tool.ToolInitializer;
-import ca.vanzyl.concord.plugins.tool.annotations.AnnotationProcessor;
+import ca.vanzyl.concord.plugins.toolsupport.annotations.AnnotationProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Lists;
@@ -44,7 +35,7 @@ public final class ToolTaskSupport
         this.annotationProcessor = new AnnotationProcessor();
     }
 
-    public TaskResult execute(Context ctx, Map<String, ToolCommandV2> commands, Map<String, Object> input)
+    public TaskResult execute(Context ctx, Map<String, ToolCommand> commands, Map<String, Object> input)
             throws Exception
     {
         Path workDir = ctx.workingDirectory();
@@ -64,7 +55,7 @@ public final class ToolTaskSupport
         ToolConfiguration toolConfiguration = toolConfigurator.createConfiguration(input, ToolConfiguration.class);
 
         // Retrieve the specific command as specified by the "command" key in the configuration
-        ToolCommandV2 toolCommand = commands.get(taskName + "/" + toolCommandName);
+        ToolCommand toolCommand = commands.get(taskName + "/" + toolCommandName);
         if (toolCommand == null) {
             throw new RuntimeException(String.format("Cannot find the command %s/%s", taskName, toolCommandName));
         }

@@ -1,4 +1,4 @@
-package ca.vanzyl.concord.plugins.tool.annotations;
+package ca.vanzyl.concord.plugins.toolsupport.annotations;
 
 import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;

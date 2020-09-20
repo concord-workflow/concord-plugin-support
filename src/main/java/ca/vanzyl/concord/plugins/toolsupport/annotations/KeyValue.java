@@ -1,4 +1,4 @@
-package ca.vanzyl.concord.plugins.tool.annotations;
+package ca.vanzyl.concord.plugins.toolsupport.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

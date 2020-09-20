@@ -1,4 +1,4 @@
-package ca.vanzyl.concord.plugins.tool;
+package ca.vanzyl.concord.plugins.toolsupport;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;

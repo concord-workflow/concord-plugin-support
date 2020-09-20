@@ -1,67 +1,60 @@
-package ca.vanzyl.concord.plugins.tool;
+package ca.vanzyl.concord.plugins.toolsupport;
 
-import com.walmartlabs.concord.sdk.Context;
+import com.walmartlabs.concord.runtime.v2.sdk.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Map;
 
-public abstract class ToolCommandSupport implements ToolCommand {
-
+public abstract class ToolCommandSupport
+        implements ToolCommand
+{
     private static final Logger logger = LoggerFactory.getLogger(ToolCommandSupport.class);
 
-
     @Override
-    public String idempotencyCheckCommand(Context context) {
+    public String idempotencyCheckCommand(Context ctx)
+    {
         return null;
     }
 
     @Override
-    public int expectedIdempotencyCheckReturnValue() {
+    public int expectedIdempotencyCheckReturnValue()
+    {
         return 0;
     }
 
     @Override
-    public void preProcess(Path workDir, Context context) throws Exception {
-    }
-
-    @Override
-    public void postProcess(Path workDir, Context context) throws Exception {
-    }
-
-    @Override
-    public void preExecute(Context context, Path workDir, List<String> cliArguments) throws Exception
+    public void preProcess(Context ctx, Path workDir)
+            throws Exception
     {
     }
 
     @Override
-    public void postExecute(Context context, Path workDir) throws Exception
+    public void postProcess(Path workDir)
+            throws Exception
     {
     }
 
-    protected Path workDir(Context context) {
-        Path workDir = Paths.get((String) context.getVariable(com.walmartlabs.concord.sdk.Constants.Context.WORK_DIR_KEY));
-        if (workDir == null) {
-            throw new IllegalArgumentException("Can't determine the current '" + com.walmartlabs.concord.sdk.Constants.Context.WORK_DIR_KEY + "'");
-        }
-        return workDir;
+    @Override
+    public void preExecute(Path workDir, List<String> cliArguments)
+            throws Exception
+    {
     }
 
-    protected String clusterRequestVarAsString(Context context, String variable) {
-        return (String) clusterRequest(context).get(variable);
+    @Override
+    public void postExecute(Path workDir)
+            throws Exception
+    {
     }
 
-    protected Map<String, Object> clusterRequest(Context context) {
-        return (Map<String, Object>) context.getVariable("clusterRequest");
-    }
-
-    protected void interpolateWorkspaceFileAgainstContext(File file, Context context) {
+    // TODO move into utils?
+    // TODO include task inputs?
+    protected void interpolateWorkspaceFileAgainstContext(Context ctx, File file)
+    {
         try {
             //
             // We need to take the values.yml that is provided and interpolate the content with the
@@ -78,12 +71,13 @@ public abstract class ToolCommandSupport implements ToolCommand {
                     //
                     File fileOriginal = new File(file + ".original");
                     Files.copy(file.toPath(), fileOriginal.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    String interpolatedFileContent = (String) context.interpolate(fileContent);
+                    String interpolatedFileContent = ctx.eval(fileContent, String.class);
                     Files.write(file.toPath(), interpolatedFileContent.getBytes());
                     logger.info("The {} file was interpolated to the following: \n\n{}", file.getName(), interpolatedFileContent);
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
