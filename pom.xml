@@ -120,21 +120,6 @@
             <artifactId>takari-archiver</artifactId>
             <version>0.1.21</version>
         </dependency>
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>command</artifactId>
-            <version>0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>units</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.spullara.mustache.java</groupId>
-            <artifactId>compiler</artifactId>
-            <version>0.9.6</version>
-        </dependency>
 
         <!-- Testing -->
         <dependency>
