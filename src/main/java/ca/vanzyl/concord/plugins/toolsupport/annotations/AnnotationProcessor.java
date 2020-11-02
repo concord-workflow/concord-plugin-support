@@ -113,9 +113,16 @@ public class AnnotationProcessor
         }
     }
 
-    private void processAnnotation(Flag flag, Object operand, Object command, Field field, List<String> arguments) throws Exception {
-        if (flag != null) {
-            if (!flag.omitFor().equals(command.getClass())) {
+    private void processAnnotation(Flag flag, Object operand, Object command, Field field, List<String> arguments)
+            throws Exception
+    {
+        if (flag != null && !flag.omitFor().equals(command.getClass())) {
+            field.setAccessible(true);
+            Object fieldValue = field.get(operand);
+            if (!(fieldValue instanceof Boolean)) {
+                throw new IllegalArgumentException("Field[" + field.getName() + "] annotated with " + flag.getClass().getName() + " need to be boolean");
+            }
+            if ((Boolean) fieldValue) {
                 arguments.add(flag.name()[0]);
             }
         }
