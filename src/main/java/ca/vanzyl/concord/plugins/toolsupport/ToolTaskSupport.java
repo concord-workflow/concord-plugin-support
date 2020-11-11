@@ -131,7 +131,10 @@ public final class ToolTaskSupport
             CliCommand command = new CliCommand(cliArguments, workDir, toolConfiguration.envars(), toolConfiguration.saveOutput());
             CliCommand.Result commandResult = command.execute(Executors.newCachedThreadPool());
             if (commandResult.getCode() != 0) {
-                throw new RuntimeException(String.format("The command %s failed. Look in the logs above.", commandLineArguments));
+                boolean ignoreErrors = MapUtils.getBoolean(input, "ignoreErrors", false);
+                if (!ignoreErrors) {
+                    throw new RuntimeException(String.format("The command %s failed. Look in the logs above.", commandLineArguments));
+                }
             }
 
             // Used for testing to collect the log output to make assertions against
