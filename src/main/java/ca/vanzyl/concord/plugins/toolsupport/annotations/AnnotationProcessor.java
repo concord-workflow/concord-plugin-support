@@ -5,6 +5,7 @@ import com.google.common.reflect.TypeToken;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -20,15 +21,15 @@ helm <-- commandName
 */
 public class AnnotationProcessor
 {
-    private static TypeToken<List<String>> listVariable = new TypeToken<List<String>>() {};
-    private static TypeToken<Map<String,Object>> mapVariable = new TypeToken<Map<String,Object>>() {};
+    private static final TypeToken<List<String>> listVariable = new TypeToken<List<String>>() {};
+    private static final TypeToken<Map<String,Object>> mapVariable = new TypeToken<Map<String,Object>>() {};
 
     /**
      * Construct a CLI based on command name, and a command instance that has been configured. The command instance
      * is configured from the parameters passed to Concord.
      *
      * @param commandName The command name like 'packer' or 'helm'
-     * @param command The javax.inject annotated command instance that has been configured
+     * @param command     The javax.inject annotated command instance that has been configured
      * @return
      * @throws Exception
      */
@@ -65,9 +66,8 @@ public class AnnotationProcessor
                 || mapVariable.getRawType().isAssignableFrom(operand.getClass());
     }
 
-    private void processAnnotations(Field field, Object operand, Object command, List<String> arguments) throws Exception
-    {
-        if(field.getAnnotations().length == 2) {
+    private void processAnnotations(Field field, Object operand, Object command, List<String> arguments) throws Exception {
+        if (field.getAnnotations().length == 2) {
             processAnnotation(field.getAnnotation(Option.class), operand, command, field, arguments);
             processAnnotation(field.getAnnotation(OptionAsCsv.class), operand, command, field, arguments);
             processAnnotation(field.getAnnotation(OptionWithEquals.class), operand, command, field, arguments);
@@ -82,11 +82,7 @@ public class AnnotationProcessor
             field.setAccessible(true);
             Object value = field.get(operand);
             if (value != null) {
-                // This is specifically for Helm install vs upgrade where install uses the --name parameter and its omitted in upgrade
-                if (!option.omitFor().equals(command.getClass())) {
-                    arguments.add(option.name()[0]);
-                }
-                arguments.add((String) value);
+                addValue(arguments, option, command, value);
             }
         }
     }
@@ -96,7 +92,7 @@ public class AnnotationProcessor
             field.setAccessible(true);
             Object value = field.get(operand);
             if (value != null) {
-                arguments.add(option.name()[0] + "=" + String.join(",", ((List<String>)value)));
+                arguments.add(option.name()[0] + "=" + String.join(",", ((List<String>) value)));
             }
         }
     }
@@ -113,9 +109,7 @@ public class AnnotationProcessor
         }
     }
 
-    private void processAnnotation(Flag flag, Object operand, Object command, Field field, List<String> arguments)
-            throws Exception
-    {
+    private void processAnnotation(Flag flag, Object operand, Object command, Field field, List<String> arguments) throws Exception {
         if (flag != null && !flag.omitFor().equals(command.getClass())) {
             field.setAccessible(true);
             Object fieldValue = field.get(operand);
@@ -131,7 +125,7 @@ public class AnnotationProcessor
     // helm --set "foo=bar"
     // TODO: This should probably operate on a map
     private void processAnnotation(KeyValue keyValue, Object operand, Object command, Field field, List<String> arguments) throws Exception {
-        if(keyValue != null) {
+        if (keyValue != null) {
             field.setAccessible(true);
             Object fieldValue = field.get(operand);
             if (fieldValue != null) {
@@ -159,11 +153,26 @@ public class AnnotationProcessor
     }
 
     private void processAnnotation(Value value, Object operand, Object command, Field field, List<String> arguments) throws Exception {
-        if(value != null) {
+        if (value != null) {
             field.setAccessible(true);
             Object fieldValue = field.get(operand);
             if (fieldValue != null) {
                 arguments.add((String) fieldValue);
+            }
+        }
+    }
+
+    private static void addValue(List<String> arguments, Option option, Object command, Object value) {
+        // This is specifically for Helm install vs upgrade where install uses the --name parameter and its omitted in upgrade
+        if (value instanceof String) {
+            if (!option.omitFor().equals(command.getClass())) {
+                arguments.add(option.name()[0]);
+            }
+
+            arguments.add((String) value);
+        } else if (value instanceof Collection) {
+            for (Object o : (Collection<?>) value) {
+                addValue(arguments, option, command, o);
             }
         }
     }
