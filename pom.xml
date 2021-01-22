@@ -125,7 +125,7 @@
         <dependency>
             <groupId>ca.vanzyl.concord.plugins</groupId>
             <artifactId>concord-plugin-testing</artifactId>
-            <version>0.0.6</version>
+            <version>0.0.8</version>
             <scope>test</scope>
         </dependency>
         <dependency>
